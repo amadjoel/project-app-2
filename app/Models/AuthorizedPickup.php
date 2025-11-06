@@ -15,11 +15,15 @@ class AuthorizedPickup extends Model
         'student_id',
         'rfid_card_id',
         'allowed',
+            'time_in',
+            'time_out',
         'notes',
     ];
 
     protected $casts = [
         'allowed' => 'boolean',
+            'time_in' => 'string',
+            'time_out' => 'string',
     ];
 
     public function parent()

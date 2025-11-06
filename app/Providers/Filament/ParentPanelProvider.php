@@ -35,7 +35,11 @@ class ParentPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Parent/Widgets'), for: 'App\\Filament\\Parent\\Widgets')
             ->widgets([
-                // Empty - no widgets on parent dashboard
+                \App\Filament\Parent\Widgets\ParentOverviewStats::class,
+                \App\Filament\Parent\Widgets\DailyActivitySummary::class,
+                \App\Filament\Parent\Widgets\DailyBehaviorSummary::class,
+                \App\Filament\Parent\Widgets\WeeklyAIReport::class,
+                \App\Filament\Parent\Widgets\UnreadUpdatesList::class,
             ])
             ->middleware([
                 EncryptCookies::class,
