@@ -36,6 +36,7 @@ class TeacherPanelProvider extends PanelProvider
                 ->widgets([
                 \App\Filament\Teacher\Widgets\AIDrivenSummary::class,
                     \App\Filament\Teacher\Widgets\TeacherStatsOverview::class,
+                    \App\Filament\Teacher\Widgets\BehaviorMonitoringStats::class,
                     \App\Filament\Teacher\Widgets\AttendanceTrendChart::class,
                     \App\Filament\Teacher\Widgets\IncidentsByTypeChart::class,
                 ])

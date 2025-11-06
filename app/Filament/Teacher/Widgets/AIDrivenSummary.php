@@ -14,6 +14,8 @@ class AIDrivenSummary extends Widget
     
     protected static ?int $sort = 1;
     
+    protected int | string | array $columnSpan = 'full';
+    
     public function getSummaryData(): array
     {
         $teacherId = Auth::id();
