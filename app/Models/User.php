@@ -66,4 +66,36 @@ class User extends Authenticatable
     {
         return $this->hasOne(RFIDCard::class)->where('status', 'active');
     }
+
+    /**
+     * The guardian (parent) for this student (if set).
+     */
+    public function guardian()
+    {
+        return $this->belongsTo(User::class, 'guardian_id');
+    }
+
+    /**
+     * Guardian's primary children (users whose guardian_id points to this user).
+     */
+    public function guardianChildren()
+    {
+        return $this->hasMany(User::class, 'guardian_id');
+    }
+
+    /**
+     * Attendance records as a student.
+     */
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class, 'student_id');
+    }
+
+    /**
+     * Attendance records created as a teacher.
+     */
+    public function teacherAttendances()
+    {
+        return $this->hasMany(Attendance::class, 'teacher_id');
+    }
 }

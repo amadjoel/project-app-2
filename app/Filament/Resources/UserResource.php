@@ -36,27 +36,27 @@ class UserResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with('roles');
+            ->with('roles', 'guardian');
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->hasRole(['admin', 'super_admin']);
+        return auth()->check() && auth()->user()->hasRole(['admin', 'super_admin']);
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()->hasRole(['admin', 'super_admin']);
+        return auth()->check() && auth()->user()->hasRole(['admin', 'super_admin']);
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return auth()->user()->hasRole(['admin', 'super_admin']);
+        return auth()->check() && auth()->user()->hasRole(['admin', 'super_admin']);
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return auth()->user()->hasRole(['admin', 'super_admin']) && auth()->id() !== $record->id;
+        return auth()->check() && auth()->user()->hasRole(['admin', 'super_admin']) && auth()->id() !== $record->id;
     }
 
     public static function form(Form $form): Form
@@ -92,7 +92,7 @@ class UserResource extends Resource
                             ->required()
                             ->multiple(false)
                             ->searchable()
-                            ->visible(fn () => auth()->user()->hasRole(['admin', 'super_admin']))
+                            ->visible(fn () => auth()->check() && auth()->user()->hasRole(['admin', 'super_admin']))
                     ])
             ]);
     }
@@ -133,6 +133,10 @@ class UserResource extends Resource
                     ->label('Parents')
                     ->counts('parents')
                     ->visible(fn ($record) => $record && $record->hasRole('student')),
+                Tables\Columns\TextColumn::make('guardian.name')
+                    ->label('Guardian')
+                    ->sortable()
+                    ->searchable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('roles')

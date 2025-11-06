@@ -98,6 +98,28 @@ class RFIDCardResource extends Resource
                         'lost' => 'Lost',
                         'replaced' => 'Replaced',
                     ]),
+                Tables\Filters\Filter::make('user_type')
+                    ->form([
+                        Forms\Components\Select::make('role')
+                            ->label('User Type')
+                            ->options([
+                                'admin' => 'Admin',
+                                'teacher' => 'Teacher',
+                                'parent' => 'Parent',
+                                'student' => 'Student',
+                            ])
+                            ->placeholder('All Users'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['role'],
+                            fn (Builder $query, $role): Builder => $query->whereHas('user', function ($q) use ($role) {
+                                $q->whereHas('roles', function ($q) use ($role) {
+                                    $q->where('name', $role);
+                                });
+                            })
+                        );
+                    }),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([

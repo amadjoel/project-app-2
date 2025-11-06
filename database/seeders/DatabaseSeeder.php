@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             SampleUsersSeeder::class,
             ParentStudentSeeder::class,
             RFIDCardsSeeder::class,
+            AuthorizedPickupsSeeder::class,
         ]);
     }
 }

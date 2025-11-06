@@ -13,35 +13,40 @@ class RolesAndPermissionsSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // create permissions
-        Permission::create(['name' => 'manage rfid cards']);
-        Permission::create(['name' => 'view rfid cards']);
-        Permission::create(['name' => 'manage users']);
-        Permission::create(['name' => 'view users']);
-        Permission::create(['name' => 'manage roles']);
-        Permission::create(['name' => 'view roles']);
-        Permission::create(['name' => 'manage students']);
-        Permission::create(['name' => 'view students']);
-        Permission::create(['name' => 'manage parents']);
-        Permission::create(['name' => 'view parents']);
+        $permissions = [
+            'manage rfid cards',
+            'view rfid cards',
+            'manage users',
+            'view users',
+            'manage roles',
+            'view roles',
+            'manage students',
+            'view students',
+            'manage parents',
+            'view parents',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
 
         // create roles and assign created permissions
-        $role = Role::create(['name' => 'admin'])
-            ->givePermissionTo(Permission::all());
+        $admin = Role::firstOrCreate(['name' => 'admin']);
+        $admin->syncPermissions(Permission::all());
 
-        $role = Role::create(['name' => 'teacher'])
-            ->givePermissionTo([
-                'view rfid cards',
-                'view users',
-                'view students',
-                'view parents'
-            ]);
+        $teacher = Role::firstOrCreate(['name' => 'teacher']);
+        $teacher->syncPermissions([
+            'view rfid cards',
+            'view users',
+            'view students',
+            'view parents',
+        ]);
 
-        $role = Role::create(['name' => 'parent'])
-            ->givePermissionTo([
-                'view students'
-            ]);
+        $parent = Role::firstOrCreate(['name' => 'parent']);
+        $parent->syncPermissions([
+            'view students',
+        ]);
 
-        $role = Role::create(['name' => 'student']);
+        Role::firstOrCreate(['name' => 'student']);
     }
 }

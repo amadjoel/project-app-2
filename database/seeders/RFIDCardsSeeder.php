@@ -21,9 +21,20 @@ class RFIDCardsSeeder extends Seeder
             })
             ->get();
 
-        // Generate 100 unique RFID cards
+        // Get all parents without an RFID card
+        $parents = User::role('parent')
+            ->whereDoesntHave('rfidCards', function($query) {
+                $query->where('status', 'active');
+            })
+            ->get();
+
+        // Total users needing cards
+        $usersNeedingCards = $students->merge($parents);
+        $totalCards = 100;
+
+        // Generate RFID cards
         $cards = collect();
-        for ($i = 1; $i <= 100; $i++) {
+        for ($i = 1; $i <= $totalCards; $i++) {
             // Generate a unique 10-character hexadecimal card number
             do {
                 $cardNumber = strtoupper(Str::random(10));
@@ -32,17 +43,17 @@ class RFIDCardsSeeder extends Seeder
             // Create the card
             $card = RFIDCard::create([
                 'card_number' => $cardNumber,
-                'status' => 'active',
+                'status' => 'inactive',  // Start as inactive, will become active when assigned
             ]);
 
             $cards->push($card);
         }
 
-        // Assign cards to students (one per student)
-        foreach ($students as $index => $student) {
+        // Assign cards to students first, then parents
+        foreach ($usersNeedingCards as $index => $user) {
             if ($index < $cards->count()) {
                 $cards[$index]->update([
-                    'user_id' => $student->id
+                    'user_id' => $user->id
                 ]);
             }
         }
