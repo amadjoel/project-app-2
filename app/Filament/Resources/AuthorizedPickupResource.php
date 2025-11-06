@@ -82,7 +82,7 @@ class AuthorizedPickupResource extends Resource
             TextColumn::make('rfidCard.card_number')->label('RFID Card')->sortable()->searchable(),
             BooleanColumn::make('allowed')->label('Allowed')->sortable(),
             TextColumn::make('notes')->limit(50)->wrap(),
-            TextColumn::make('created_at')->dateTime()->toggleable(),
+            TextColumn::make('created_at')->dateTime()->sortable()->toggleable(),
         ])
         ->filters([
             Tables\Filters\TrashedFilter::make(),

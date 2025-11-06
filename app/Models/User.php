@@ -23,8 +23,12 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
         'email',
+        'date_of_birth',
         'password',
+        'class_id',
     ];
 
     /**
@@ -45,6 +49,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'date_of_birth' => 'date',
     ];
 
     public function students()
@@ -97,5 +102,45 @@ class User extends Authenticatable
     public function teacherAttendances()
     {
         return $this->hasMany(Attendance::class, 'teacher_id');
+    }
+
+    /**
+     * Behavior records for this student.
+     */
+    public function behaviorRecords()
+    {
+        return $this->hasMany(BehaviorRecord::class, 'student_id');
+    }
+
+    /**
+     * Incident logs involving this student.
+     */
+    public function incidentLogs()
+    {
+        return $this->hasMany(IncidentLog::class, 'student_id');
+    }
+
+    /**
+     * Incident logs reported by this teacher.
+     */
+    public function reportedIncidents()
+    {
+        return $this->hasMany(IncidentLog::class, 'teacher_id');
+    }
+
+    /**
+     * Get the class assigned to this teacher (one-to-one).
+     */
+    public function teacherClass()
+    {
+        return $this->hasOne(ClassModel::class, 'teacher_id');
+    }
+
+    /**
+     * Get the class this student belongs to (many-to-one).
+     */
+    public function class()
+    {
+        return $this->belongsTo(ClassModel::class, 'class_id');
     }
 }

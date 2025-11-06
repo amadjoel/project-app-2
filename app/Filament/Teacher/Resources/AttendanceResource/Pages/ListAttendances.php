@@ -10,6 +10,8 @@ class ListAttendances extends ListRecords
 {
     protected static string $resource = AttendanceResource::class;
 
+    protected static ?string $pollingInterval = '10s';
+
     protected function getHeaderActions(): array
     {
         return [

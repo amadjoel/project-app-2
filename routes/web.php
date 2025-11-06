@@ -18,6 +18,10 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
+// RFID Simulator Routes
+Route::get('/rfid', [\App\Http\Controllers\RFIDSimulatorController::class, 'index'])->name('rfid.simulator');
+Route::post('/rfid/scan', [\App\Http\Controllers\RFIDSimulatorController::class, 'scan'])->name('rfid.scan');
+
 // Teacher exports (scoped via middleware)
 Route::middleware(['web', 'auth', 'role:teacher'])->group(function () {
     Route::prefix('teacher/exports')->name('teacher.exports.')->group(function () {

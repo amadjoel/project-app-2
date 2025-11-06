@@ -65,34 +65,82 @@ class UserResource extends Resource
             ->schema([
                 Forms\Components\Card::make()
                     ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('email')
-                            ->email()
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(ignorable: fn ($record) => $record),
-                        Forms\Components\TextInput::make('password')
-                            ->password()
-                            ->dehydrated(fn ($state) => filled($state))
-                            ->required(fn (string $context): bool => $context === 'create')
-                            ->minLength(8)
-                            ->same('passwordConfirmation')
-                            ->dehydrateStateUsing(fn ($state) => !empty($state) ? bcrypt($state) : null),
-                        Forms\Components\TextInput::make('passwordConfirmation')
-                            ->password()
-                            ->label('Password Confirmation')
-                            ->required(fn (string $context): bool => $context === 'create')
-                            ->minLength(8)
-                            ->dehydrated(false),
-                        Forms\Components\Select::make('roles')
-                            ->relationship('roles', 'name')
-                            ->preload()
-                            ->required()
-                            ->multiple(false)
-                            ->searchable()
-                            ->visible(fn () => auth()->check() && auth()->user()->hasRole(['admin', 'super_admin']))
+                        Forms\Components\Section::make('Personal Information')
+                            ->schema([
+                                Forms\Components\TextInput::make('first_name')
+                                    ->label('First Name')
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('last_name')
+                                    ->label('Last Name')
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Full Name (Display)')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->helperText('This name will be displayed throughout the system'),
+                                Forms\Components\DatePicker::make('date_of_birth')
+                                    ->label('Date of Birth')
+                                    ->displayFormat('M d, Y')
+                                    ->maxDate(now())
+                                    ->native(false),
+                                Forms\Components\Placeholder::make('parents_info')
+                                    ->label('Parents')
+                                    ->content(function ($record) {
+                                        if (!$record || !$record->hasRole('student')) {
+                                            return null;
+                                        }
+                                        
+                                        $parents = $record->parents;
+                                        if ($parents->isEmpty()) {
+                                            return 'No parents assigned';
+                                        }
+                                        
+                                        return view('filament.components.parents-links', ['parents' => $parents]);
+                                    })
+                                    ->visible(fn ($record) => $record && $record->hasRole('student'))
+                                    ->columnSpanFull(),
+                            ])->columns(2),
+                        
+                        Forms\Components\Section::make('Account Information')
+                            ->schema([
+                                Forms\Components\TextInput::make('email')
+                                    ->email()
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->unique(ignorable: fn ($record) => $record),
+                                Forms\Components\Select::make('roles')
+                                    ->relationship('roles', 'name')
+                                    ->preload()
+                                    ->required()
+                                    ->multiple(false)
+                                    ->searchable()
+                                    ->visible(fn () => auth()->check() && auth()->user()->hasRole(['admin', 'super_admin'])),
+                                Forms\Components\Select::make('class_id')
+                                    ->label('Class')
+                                    ->relationship('class', 'name')
+                                    ->preload()
+                                    ->searchable()
+                                    ->visible(fn ($get) => $get('roles') === 'student' || (is_array($get('roles')) && in_array('student', $get('roles'))))
+                                    ->helperText('Assign this student to a class'),
+                            ])->columns(2),
+                        
+                        Forms\Components\Section::make('Password')
+                            ->schema([
+                                Forms\Components\TextInput::make('password')
+                                    ->password()
+                                    ->dehydrated(fn ($state) => filled($state))
+                                    ->required(fn (string $context): bool => $context === 'create')
+                                    ->minLength(8)
+                                    ->same('passwordConfirmation')
+                                    ->dehydrateStateUsing(fn ($state) => !empty($state) ? bcrypt($state) : null),
+                                Forms\Components\TextInput::make('passwordConfirmation')
+                                    ->password()
+                                    ->label('Password Confirmation')
+                                    ->required(fn (string $context): bool => $context === 'create')
+                                    ->minLength(8)
+                                    ->dehydrated(false),
+                            ])->columns(2)
+                            ->visibleOn(['create', 'edit']),
                     ])
             ]);
     }
@@ -102,11 +150,28 @@ class UserResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Display Name')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('first_name')
+                    ->label('First Name')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('last_name')
+                    ->label('Last Name')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('email')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('date_of_birth')
+                    ->label('Date of Birth')
+                    ->date('M d, Y')
+                    ->sortable()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 Tables\Columns\BadgeColumn::make('role')
                     ->label('Role')
                     ->getStateUsing(fn ($record) => $record->roles->first()?->name ?? '')
@@ -116,10 +181,17 @@ class UserResource extends Resource
                         'success' => 'teacher',
                         'primary' => fn ($state) => in_array($state, ['admin', 'super_admin']),
                     ]),
+                Tables\Columns\TextColumn::make('class.name')
+                    ->label('Class')
+                    ->sortable()
+                    ->searchable()
+                    ->toggleable()
+                    ->visible(fn ($record) => $record && $record->hasRole('student')),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime('Y-m-d H:i:s')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime('Y-m-d H:i:s')
                     ->sortable()
@@ -136,7 +208,8 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('guardian.name')
                     ->label('Guardian')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('roles')

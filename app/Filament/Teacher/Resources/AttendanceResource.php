@@ -93,6 +93,7 @@ class AttendanceResource extends Resource
                     ->searchable(),
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
+                    ->sortable()
                     ->colors([
                         'success' => 'present',
                         'danger' => 'absent',

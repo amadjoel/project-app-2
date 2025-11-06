@@ -16,14 +16,26 @@ class ParentStudentSeeder extends Seeder
         $parents = User::role('parent')->get();
         $students = User::role('student')->get();
 
-        // Group students into chunks of 10
-        $studentChunks = $students->chunk(10);
+        if ($parents->isEmpty() || $students->isEmpty()) {
+            $this->command->warn('No parents or students found. Skipping parent-student relationships.');
+            return;
+        }
 
-        // Assign each chunk to a parent
-        foreach ($parents as $index => $parent) {
-            if (isset($studentChunks[$index])) {
-                $parent->students()->attach($studentChunks[$index]->pluck('id'));
+        // Each student gets 1-2 parents
+        foreach ($students as $student) {
+            // Randomly select 1 or 2 parents for this student
+            $numParents = rand(1, 2);
+            $selectedParents = $parents->random(min($numParents, $parents->count()));
+            
+            foreach ($selectedParents as $parent) {
+                // Avoid duplicate relationships
+                if (!$student->parents()->where('parent_id', $parent->id)->exists()) {
+                    $student->parents()->attach($parent->id);
+                }
             }
         }
+
+        $count = \DB::table('parent_student')->count();
+        $this->command->info("Created {$count} parent-student relationships.");
     }
 }

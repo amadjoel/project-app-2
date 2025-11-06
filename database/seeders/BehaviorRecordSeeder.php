@@ -15,23 +15,12 @@ class BehaviorRecordSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get teacher1
-        $teacher = User::where('email', 'teacher1@example.com')->first();
+        // Get all teachers and students
+        $teachers = User::role('teacher')->get();
+        $students = User::role('student')->get();
         
-        if (!$teacher) {
-            $this->command->warn('Teacher1 not found. Please run UserSeeder first.');
-            return;
-        }
-        
-        // Get students assigned to this teacher
-        $studentIds = \DB::table('attendances')
-            ->where('teacher_id', $teacher->id)
-            ->distinct()
-            ->pluck('student_id')
-            ->toArray();
-        
-        if (empty($studentIds)) {
-            $this->command->warn('No students found for teacher1. Please run AttendanceSeeder first.');
+        if ($teachers->isEmpty() || $students->isEmpty()) {
+            $this->command->warn('No teachers or students found. Please run SampleUsersSeeder first.');
             return;
         }
         
@@ -101,10 +90,9 @@ class BehaviorRecordSeeder extends Seeder
             [
                 'type' => 'negative',
                 'category' => 'responsibility',
-                'title' => 'Forgot homework again',
-                'description' => 'Third time this week student forgot to bring homework',
+                'title' => 'Forgot materials',
+                'description' => 'Came to class without required materials',
                 'points' => -1,
-                'parent_notified' => true,
             ],
             
             // Neutral observations
@@ -117,10 +105,10 @@ class BehaviorRecordSeeder extends Seeder
             ],
         ];
         
-        // Create behavior records for the last 14 days
-        $startDate = now()->subDays(14);
+        // Create behavior records for the last 30 days
+        $startDate = now()->subDays(30);
         
-        for ($day = 0; $day < 14; $day++) {
+        for ($day = 0; $day < 30; $day++) {
             $date = $startDate->copy()->addDays($day);
             
             // Skip weekends
@@ -128,15 +116,16 @@ class BehaviorRecordSeeder extends Seeder
                 continue;
             }
             
-            // Randomly select 2-5 students per day
-            $numRecords = rand(2, 5);
-            $selectedStudents = collect($studentIds)->random(min($numRecords, count($studentIds)));
+            // Randomly select 5-15 students per day to have behavior records
+            $numRecords = rand(5, 15);
+            $selectedStudents = $students->random(min($numRecords, $students->count()));
             
-            foreach ($selectedStudents as $studentId) {
+            foreach ($selectedStudents as $student) {
                 $behavior = $behaviors[array_rand($behaviors)];
+                $teacher = $teachers->random();
                 
                 $record = [
-                    'student_id' => $studentId,
+                    'student_id' => $student->id,
                     'teacher_id' => $teacher->id,
                     'date' => $date->format('Y-m-d'),
                     'time' => $date->setTime(rand(8, 15), rand(0, 59))->format('H:i:s'),
@@ -164,6 +153,7 @@ class BehaviorRecordSeeder extends Seeder
             }
         }
         
-        $this->command->info('Behavior records seeded successfully!');
+        $count = BehaviorRecord::count();
+        $this->command->info("Created {$count} behavior records.");
     }
 }

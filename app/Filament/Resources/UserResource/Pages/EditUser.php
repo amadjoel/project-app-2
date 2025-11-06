@@ -20,4 +20,21 @@ class EditUser extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function getFooterWidgets(): array
+    {
+        $widgets = [];
+        
+        // Show attendance widget for students
+        if ($this->record->hasRole('student')) {
+            $widgets[] = UserResource\Widgets\StudentAttendanceWidget::class;
+        }
+        
+        // Show children widget for parents
+        if ($this->record->hasRole('parent')) {
+            $widgets[] = UserResource\Widgets\ParentChildrenWidget::class;
+        }
+        
+        return $widgets;
+    }
 }

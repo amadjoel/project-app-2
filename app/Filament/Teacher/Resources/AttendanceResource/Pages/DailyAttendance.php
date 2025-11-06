@@ -28,6 +28,8 @@ class DailyAttendance extends Page implements HasTable
     
     protected static ?string $navigationLabel = 'Daily View';
     
+    protected static ?string $pollingInterval = '10s';
+    
     public $selectedDate;
     
     public function mount(): void
@@ -40,16 +42,14 @@ class DailyAttendance extends Page implements HasTable
         return $table
             ->query(
                 User::role('student')
-                    ->whereIn('id', function ($query) {
-                        // Only show students that have been assigned to this teacher
-                        $query->select('student_id')
-                              ->from('attendances')
-                              ->where('teacher_id', Auth::id())
-                              ->distinct();
+                    ->whereIn('users.class_id', function ($query) {
+                        // Show students in classes taught by this teacher
+                        $query->select('id')
+                              ->from('classes')
+                              ->where('teacher_id', Auth::id());
                     })
                     ->with(['attendances' => function ($query) {
-                        $query->where('date', $this->selectedDate)
-                              ->where('teacher_id', Auth::id());
+                        $query->where('date', $this->selectedDate);
                     }])
             )
             ->columns([
@@ -57,8 +57,16 @@ class DailyAttendance extends Page implements HasTable
                     ->label('Student Name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\BadgeColumn::make('attendances.status')
+                Tables\Columns\BadgeColumn::make('attendance_status')
                     ->label('Status')
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->leftJoin('attendances as att_sort', function ($join) {
+                            $join->on('users.id', '=', 'att_sort.student_id')
+                                 ->where('att_sort.date', $this->selectedDate);
+                        })
+                        ->orderBy('att_sort.status', $direction)
+                        ->select('users.*');
+                    })
                     ->getStateUsing(function ($record) {
                         $attendance = $record->attendances->first();
                         return $attendance?->status ?? 'unmarked';

@@ -17,3 +17,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// RFID Attendance API Routes (no auth required for hardware integration)
+Route::prefix('rfid')->group(function () {
+    Route::post('/scan', [\App\Http\Controllers\Api\RFIDAttendanceController::class, 'scan']);
+    Route::post('/status', [\App\Http\Controllers\Api\RFIDAttendanceController::class, 'status']);
+    Route::get('/health', [\App\Http\Controllers\Api\RFIDAttendanceController::class, 'health']);
+});
